@@ -16,16 +16,36 @@ router.get("/:pid", async (req, res) => {
 
 router.post("/", async (req, res) => {
     const newProduct = await productManager.addProduct(req.body);
+    
+    // Emitir evento de socket para actualizar la vista en tiempo real
+    const io = req.app.get('io');
+    const products = await productManager.getProducts();
+    io.emit('updateProducts', products);
+    
     res.status(201).json(newProduct);
 });
 
 router.put("/:pid", async (req, res) => {
     const updated = await productManager.updateProduct(req.params.pid, req.body);
+    
+    // Emitir evento de socket para actualizar la vista en tiempo real
+    if (updated) {
+        const io = req.app.get('io');
+        const products = await productManager.getProducts();
+        io.emit('updateProducts', products);
+    }
+    
     updated ? res.json(updated) : res.status(404).send("Producto no encontrado");
 });
 
 router.delete("/:pid", async (req, res) => {
     await productManager.deleteProduct(req.params.pid);
+    
+    // Emitir evento de socket para actualizar la vista en tiempo real
+    const io = req.app.get('io');
+    const products = await productManager.getProducts();
+    io.emit('updateProducts', products);
+    
     res.send("Producto eliminado");
 });
 

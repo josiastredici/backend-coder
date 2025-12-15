@@ -1,0 +1,144 @@
+<div class="form-container">
+    <h2 style="color: #667eea; margin-bottom: 20px;">Agregar Nuevo Producto</h2>
+    <form id="productForm">
+        <div class="form-group">
+            <label for="title">Título:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Descripción:</label>
+            <textarea id="description" name="description" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="code">Código:</label>
+            <input type="text" id="code" name="code" required>
+        </div>
+        <div class="form-group">
+            <label for="price">Precio:</label>
+            <input type="number" id="price" name="price" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label for="stock">Stock:</label>
+            <input type="number" id="stock" name="stock" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Categoría:</label>
+            <input type="text" id="category" name="category" required>
+        </div>
+        <button type="submit" class="btn">Agregar Producto</button>
+    </form>
+</div>
+
+<div class="products-container">
+    <div id="productsList" class="products-grid">
+        {{#if products.length}}
+            {{#each products}}
+                <div class="product-card" data-id="{{this.id}}">
+                    <h3>{{this.title}}</h3>
+                    <p><strong>Descripción:</strong> {{this.description}}</p>
+                    <p><strong>Código:</strong> {{this.code}}</p>
+                    <p><strong>Stock:</strong> {{this.stock}} unidades</p>
+                    <p><strong>Categoría:</strong> {{this.category}}</p>
+                    <p class="price">${{this.price}}</p>
+                    <div class="product-actions">
+                        <button class="btn btn-danger" onclick="deleteProduct('{{this.id}}')">Eliminar</button>
+                    </div>
+                </div>
+            {{/each}}
+        {{else}}
+            <div class="empty-message">
+                <p>No hay productos disponibles. ¡Agrega el primero!</p>
+            </div>
+        {{/if}}
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // Manejar el formulario de agregar producto
+    document.getElementById('productForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = {
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            code: document.getElementById('code').value,
+            price: parseFloat(document.getElementById('price').value),
+            stock: parseInt(document.getElementById('stock').value),
+            category: document.getElementById('category').value,
+            status: true,
+            thumbnails: []
+        };
+
+        try {
+            const response = await fetch('/api/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                document.getElementById('productForm').reset();
+                alert('Producto agregado exitosamente');
+            } else {
+                alert('Error al agregar el producto');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al agregar el producto');
+        }
+    });
+
+    // Función para eliminar producto
+    async function deleteProduct(id) {
+        if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+            try {
+                const response = await fetch(`/api/products/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('Producto eliminado exitosamente');
+                } else {
+                    alert('Error al eliminar el producto');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar el producto');
+            }
+        }
+    }
+
+    // Escuchar actualizaciones de productos desde el servidor
+    socket.on('updateProducts', (products) => {
+        const productsList = document.getElementById('productsList');
+        
+        if (products.length === 0) {
+            productsList.innerHTML = `
+                <div class="empty-message">
+                    <p>No hay productos disponibles. ¡Agrega el primero!</p>
+                </div>
+            `;
+        } else {
+            productsList.innerHTML = products.map(product => `
+                <div class="product-card" data-id="${product.id}">
+                    <h3>${product.title}</h3>
+                    <p><strong>Descripción:</strong> ${product.description}</p>
+                    <p><strong>Código:</strong> ${product.code}</p>
+                    <p><strong>Stock:</strong> ${product.stock} unidades</p>
+                    <p><strong>Categoría:</strong> ${product.category}</p>
+                    <p class="price">$${product.price}</p>
+                    <div class="product-actions">
+                        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    });
+
+    console.log('Socket.io conectado');
+</script>
