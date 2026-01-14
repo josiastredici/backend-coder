@@ -1,49 +1,78 @@
-import fs from "fs/promises";
-const path = "./src/data/products.json";
+import Product from '../models/Product.js';
 
 export default class ProductManager {
-    async getProducts() {
+    async getProducts(options = {}) {
         try {
-            const data = await fs.readFile(path, "utf-8");
-            return JSON.parse(data);
-        } catch {
-            return [];
+            const { limit = 10, page = 1, sort, query } = options;
+            
+            
+            const filter = {};
+            if (query) {
+                
+                if (query.category) {
+                    filter.category = query.category;
+                }
+                if (query.status !== undefined) {
+                    filter.status = query.status === 'true' || query.status === true;
+                }
+            }
+
+            
+            const paginateOptions = {
+                limit: parseInt(limit),
+                page: parseInt(page),
+                lean: true
+            };
+
+            
+            if (sort) {
+                paginateOptions.sort = { price: sort === 'asc' ? 1 : -1 };
+            }
+
+            const result = await Product.paginate(filter, paginateOptions);
+            return result;
+        } catch (error) {
+            throw new Error(`Error al obtener productos: ${error.message}`);
         }
     }
 
     async getProductById(id) {
-        const products = await this.getProducts();
-        return products.find(p => p.id === id);
+        try {
+            return await Product.findById(id);
+        } catch (error) {
+            throw new Error(`Error al obtener producto: ${error.message}`);
+        }
     }
 
-    async addProduct(product) {
-        const products = await this.getProducts();
-
-        const newProduct = {
-            id: Date.now().toString(),
-            ...product
-        };
-
-        products.push(newProduct);
-        await fs.writeFile(path, JSON.stringify(products, null, 2));
-        return newProduct;
+    async addProduct(productData) {
+        try {
+            const product = new Product(productData);
+            await product.save();
+            return product;
+        } catch (error) {
+            throw new Error(`Error al crear producto: ${error.message}`);
+        }
     }
 
     async updateProduct(id, updatedFields) {
-        const products = await this.getProducts();
-        const index = products.findIndex(p => p.id === id);
-
-        if (index === -1) return null;
-
-        products[index] = { ...products[index], ...updatedFields, id };
-        await fs.writeFile(path, JSON.stringify(products, null, 2));
-        return products[index];
+        try {
+            const product = await Product.findByIdAndUpdate(
+                id,
+                updatedFields,
+                { new: true }
+            );
+            return product;
+        } catch (error) {
+            throw new Error(`Error al actualizar producto: ${error.message}`);
+        }
     }
 
     async deleteProduct(id) {
-        const products = await this.getProducts();
-        const filtered = products.filter(p => p.id !== id);
-        await fs.writeFile(path, JSON.stringify(filtered, null, 2));
-        return true;
+        try {
+            await Product.findByIdAndDelete(id);
+            return true;
+        } catch (error) {
+            throw new Error(`Error al eliminar producto: ${error.message}`);
+        }
     }
 }

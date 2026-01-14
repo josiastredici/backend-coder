@@ -1,0 +1,313 @@
+<div class="container">
+    <h1>{{title}}</h1>
+
+    {{#if cart.products.length}}
+    <div class="cart-container">
+        <div class="cart-items">
+            {{#each cart.products}}
+            <div class="cart-item">
+                <div class="item-info">
+                    <h3>{{this.product.title}}</h3>
+                    <p>{{this.product.description}}</p>
+                    <p class="item-code">Código: {{this.product.code}}</p>
+                </div>
+
+                <div class="item-details">
+                    <p class="item-price">${{this.product.price}}</p>
+                    <div class="quantity-control">
+                        <label>Cantidad:</label>
+                        <input 
+                            type="number" 
+                            value="{{this.quantity}}" 
+                            min="1" 
+                            max="{{this.product.stock}}"
+                            onchange="updateQuantity('{{../cartId}}', '{{this.product._id}}', this.value)"
+                        >
+                    </div>
+                    <p class="item-subtotal">
+                        <strong>Subtotal: ${{multiply this.product.price this.quantity}}</strong>
+                    </p>
+                </div>
+
+                <div class="item-actions">
+                    <button 
+                        onclick="removeFromCart('{{../cartId}}', '{{this.product._id}}')" 
+                        class="btn btn-danger"
+                    >
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+
+        <div class="cart-summary">
+            <h2>Resumen del pedido</h2>
+            <div class="summary-item">
+                <span>Total de productos:</span>
+                <span>{{cart.products.length}}</span>
+            </div>
+            <div class="summary-total">
+                <span>Total:</span>
+                <span>${{calculateTotal cart.products}}</span>
+            </div>
+            <button class="btn btn-success btn-large">Proceder al pago</button>
+            <button onclick="clearCart('{{cartId}}')" class="btn btn-warning">Vaciar carrito</button>
+        </div>
+    </div>
+    {{else}}
+    <div class="empty-cart">
+        <p>Tu carrito está vacío</p>
+        <a href="/products" class="btn btn-primary">Ver productos</a>
+    </div>
+    {{/if}}
+
+    <a href="/products" class="btn btn-secondary">← Seguir comprando</a>
+</div>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .cart-container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin: 30px 0;
+    }
+
+    .cart-items {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .cart-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr auto;
+        gap: 20px;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        align-items: center;
+    }
+
+    .item-info h3 {
+        margin: 0 0 10px 0;
+        color: #333;
+    }
+
+    .item-info p {
+        margin: 5px 0;
+        color: #666;
+    }
+
+    .item-code {
+        font-size: 0.85em;
+        color: #999;
+    }
+
+    .item-details {
+        text-align: right;
+    }
+
+    .item-price {
+        font-size: 1.3em;
+        color: #28a745;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin: 10px 0;
+    }
+
+    .quantity-control input {
+        width: 70px;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+    }
+
+    .item-subtotal {
+        margin-top: 10px;
+        font-size: 1.1em;
+    }
+
+    .cart-summary {
+        background: white;
+        padding: 25px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+    }
+
+    .cart-summary h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px 0;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+        border-top: 2px solid #333;
+        margin-top: 10px;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 8px;
+        margin: 30px 0;
+    }
+
+    .empty-cart p {
+        font-size: 1.3em;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        font-size: 1em;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .btn-large {
+        padding: 15px 30px;
+        font-size: 1.1em;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    @media (max-width: 968px) {
+        .cart-container {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-item {
+            grid-template-columns: 1fr;
+        }
+
+        .item-details {
+            text-align: left;
+        }
+
+        .quantity-control {
+            justify-content: flex-start;
+        }
+    }
+</style>
+
+<script>
+    function updateQuantity(cartId, productId, quantity) {
+        fetch(`/api/carts/${cartId}/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ quantity: parseInt(quantity) })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Cantidad actualizada:', data);
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al actualizar la cantidad');
+        });
+    }
+
+    function removeFromCart(cartId, productId) {
+        if (confirm('¿Estás seguro de eliminar este producto del carrito?')) {
+            fetch(`/api/carts/${cartId}/products/${productId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Producto eliminado:', data);
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el producto');
+            });
+        }
+    }
+
+    function clearCart(cartId) {
+        if (confirm('¿Estás seguro de vaciar todo el carrito?')) {
+            fetch(`/api/carts/${cartId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Carrito vaciado:', data);
+                location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al vaciar el carrito');
+            });
+        }
+    }
+</script>
